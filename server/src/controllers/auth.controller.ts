@@ -1,13 +1,12 @@
 import { Request, Response } from "express";
-import { OAuth2Client } from "google-auth-library";
-import { OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } from "../config/env.config";
-import axios from "axios";
-
-const oAuth2Client = new OAuth2Client({
-  clientId: OAUTH_CLIENT_ID,
-  clientSecret: OAUTH_CLIENT_SECRET,
-  redirectUri: "http://localhost:5173",
-});
+import { User } from "../types/user.types";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  getGoogleUserInfo,
+} from "../utils/auth.utils";
+import oAuth2Client from "../config/oauth.config";
+import { findOrCreateUser } from "../services/auth.service";
 
 export const googleAuth = async (req: Request, res: Response) => {
   const { code } = req.body;
@@ -17,22 +16,27 @@ export const googleAuth = async (req: Request, res: Response) => {
     return;
   }
 
-  const { tokens } = await oAuth2Client.getToken(code);
-  oAuth2Client.setCredentials(tokens);
-  console.info("Tokens acquired.");
-
-  const { access_token } = tokens;
+  const {
+    tokens: { access_token },
+  } = await oAuth2Client.getToken(code);
 
   if (!access_token) {
     res.status(500).json({ error: "Access token not found" });
     return;
   }
 
-  const {
-    data: { email, name, sub },
-  } = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo`, {
-    headers: { Authorization: `Bearer ${access_token}` },
-  });
+  const { name, picture, email } = await getGoogleUserInfo(access_token);
 
-  res.json({ email, name, sub });
+  if (!email) {
+    res
+      .status(500)
+      .json({ message: "Incomplete user information from Google" });
+    return;
+  }
+
+  const user = await findOrCreateUser(email, name, picture);
+  const accessToken = generateAccessToken(user as User);
+  generateRefreshToken(user.userId, res);
+
+  res.json(accessToken);
 };
