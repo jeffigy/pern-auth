@@ -5,14 +5,17 @@ import App from "./App.tsx";
 import { BrowserRouter } from "react-router";
 import GoogleAuthProvider from "./lib/GoogleAuthProvider.tsx";
 import ReactQueryProvider from "./lib/ReactQueryProvider.tsx";
+import ToastProvider from "./lib/ToastProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <GoogleAuthProvider>
       <ReactQueryProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ToastProvider>
       </ReactQueryProvider>
     </GoogleAuthProvider>
   </StrictMode>

@@ -5,12 +5,14 @@ import corsOption from "./config/corsOption";
 import apiRoute from "./routes";
 import errorHandler from "./middlewares/errorHandler";
 import { connectDb } from "./db";
+import cookieParser from "cookie-parser";
 
 connectDb();
 const app = express();
 
 app.use(cors(corsOption));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/api", apiRoute);
 

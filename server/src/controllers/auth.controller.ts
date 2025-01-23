@@ -7,6 +7,7 @@ import {
 } from "../utils/auth.utils";
 import oAuth2Client from "../config/oauth.config";
 import { findOrCreateUser } from "../services/auth.service";
+import { NODE_ENV } from "../config/env.config";
 
 export const googleAuth = async (req: Request, res: Response) => {
   const { code } = req.body;
@@ -39,4 +40,20 @@ export const googleAuth = async (req: Request, res: Response) => {
   generateRefreshToken(user.userId, res);
 
   res.json(accessToken);
+};
+
+export const logout = (req: Request, res: Response) => {
+  const cookie = req.cookies;
+
+  if (!cookie.jwt) {
+    res.status(400).json({ message: "No token provided" });
+    return;
+  }
+  res.clearCookie("jwt", {
+    httpOnly: true,
+    secure: NODE_ENV !== "development",
+    sameSite: "strict",
+  });
+
+  res.json({ message: "Logged out successfully" });
 };
